@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/go-stomp/stomp/v3"
 	"log"
+	"os"
+	"sync"
 	"yt-clone-video-processing/internal/configurations"
 	"yt-clone-video-processing/internal/dependency"
 	"yt-clone-video-processing/internal/encoder"
@@ -14,6 +16,12 @@ import (
 type Message struct {
 	FileId   int64
 	FileName string
+}
+
+var Pixels = [3]int{
+	720,
+	480,
+	360,
 }
 
 func Consume(dependency *dependency.Dependency) {
@@ -44,7 +52,22 @@ func Consume(dependency *dependency.Dependency) {
 				log.Println(err)
 			}
 
-			encoder.EncodeVideo(object)
+			var waitGroup sync.WaitGroup
+
+			for _, target := range Pixels {
+				waitGroup.Add(1)
+
+				go func(target int) {
+					defer waitGroup.Done()
+					encoder.EncodeVideo(object, target)
+				}(target)
+			}
+
+			waitGroup.Wait()
+			err = os.Remove(object)
+			if err != nil {
+				log.Panicln(err)
+			}
 		}
 	}
 

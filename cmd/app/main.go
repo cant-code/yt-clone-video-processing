@@ -2,15 +2,15 @@ package main
 
 import (
 	"log"
-	"yt-clone-video-processing/internal/config"
 	"yt-clone-video-processing/internal/consumer"
+	"yt-clone-video-processing/internal/dependency"
 )
 
 func main() {
-	loadConfig, err := config.LoadConfig()
+	dependencies, err := dependency.GetDependencies()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	consumer.Consume(loadConfig)
+	consumer.Consume(dependencies)
 }

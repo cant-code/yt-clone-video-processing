@@ -1,4 +1,4 @@
-package config
+package configurations
 
 import "github.com/spf13/viper"
 
@@ -13,9 +13,21 @@ type SubscriberConfig struct {
 	Queue string
 }
 
+type Buckets struct {
+	RawVideos        string
+	TranscodedVideos string
+}
+
+type AwsConfig struct {
+	BaseUrl string
+	Region  string
+	Buckets Buckets
+}
+
 type Config struct {
 	MQ   MQConfig
 	Jobs SubscriberConfig
+	Aws  AwsConfig
 }
 
 func LoadConfig() (Config, error) {

@@ -5,3 +5,9 @@ mq:
   password: artemis
 jobs:
   queue: test
+aws:
+  baseUrl: http://localhost:9000
+  region: ap-south-1
+  buckets:
+    rawVideos: raw-videos
+    transcodedVideos: transcoded-videos

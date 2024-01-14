@@ -5,21 +5,26 @@ import (
 	"fmt"
 	"github.com/go-stomp/stomp/v3"
 	"log"
-	"yt-clone-video-processing/internal/config"
+	"yt-clone-video-processing/internal/configurations"
+	"yt-clone-video-processing/internal/dependency"
 	"yt-clone-video-processing/internal/encoder"
+	"yt-clone-video-processing/internal/objectStorage"
 )
 
 type Message struct {
-	Test string
+	FileId   int64
+	FileName string
 }
 
-func Consume(config config.Config) {
-	dial, err := stomp.Dial("tcp", GenerateAddress(config.MQ), stomp.ConnOpt.Login(config.MQ.User, config.MQ.Password))
+func Consume(dependency *dependency.Dependency) {
+	dial, err := stomp.Dial("tcp",
+		GenerateAddress(dependency.Configs.MQ),
+		stomp.ConnOpt.Login(dependency.Configs.MQ.User, dependency.Configs.MQ.Password))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sub, err := dial.Subscribe(config.Jobs.Queue, stomp.AckAuto)
+	sub, err := dial.Subscribe(dependency.Configs.Jobs.Queue, stomp.AckAuto)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,12 +39,17 @@ func Consume(config config.Config) {
 				log.Println(err)
 			}
 
-			encoder.EncodeVideo(value.Test)
+			object, err := objectStorage.GetObject(value.FileName, *dependency)
+			if err != nil {
+				log.Println(err)
+			}
+
+			encoder.EncodeVideo(object)
 		}
 	}
 
 }
 
-func GenerateAddress(conf config.MQConfig) string {
+func GenerateAddress(conf configurations.MQConfig) string {
 	return fmt.Sprintf("%s:%s", conf.Host, conf.Port)
 }

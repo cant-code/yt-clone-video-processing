@@ -3,6 +3,7 @@ package encoder
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -18,4 +19,11 @@ func EncodeVideo(input string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			log.Panicln(err)
+		}
+	}(input)
 }

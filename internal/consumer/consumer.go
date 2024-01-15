@@ -1,16 +1,11 @@
 package consumer
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/go-stomp/stomp/v3"
 	"log"
-	"os"
-	"sync"
 	"yt-clone-video-processing/internal/configurations"
 	"yt-clone-video-processing/internal/dependency"
-	"yt-clone-video-processing/internal/encoder"
-	"yt-clone-video-processing/internal/objectStorage"
 )
 
 type Message struct {
@@ -41,33 +36,7 @@ func Consume(dependency *dependency.Dependency) {
 		msg := <-sub.C
 
 		if msg != nil {
-			var value Message
-			err := json.Unmarshal(msg.Body, &value)
-			if err != nil {
-				log.Println(err)
-			}
-
-			object, err := objectStorage.GetObject(value.FileName, *dependency)
-			if err != nil {
-				log.Println(err)
-			}
-
-			var waitGroup sync.WaitGroup
-
-			for _, target := range Pixels {
-				waitGroup.Add(1)
-
-				go func(target int) {
-					defer waitGroup.Done()
-					encoder.EncodeVideo(object, target)
-				}(target)
-			}
-
-			waitGroup.Wait()
-			err = os.Remove(object)
-			if err != nil {
-				log.Panicln(err)
-			}
+			go RunJob(msg, dependency)
 		}
 	}
 

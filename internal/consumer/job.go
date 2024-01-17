@@ -11,16 +11,27 @@ import (
 	"yt-clone-video-processing/internal/objectStorage"
 )
 
+type Message struct {
+	FileId   int64
+	FileName string
+}
+
+var Pixels = [3]int{
+	720,
+	480,
+	360,
+}
+
 func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 	var value Message
 	err := json.Unmarshal(msg.Body, &value)
 	if err != nil {
-		log.Println(err)
+		log.Panicln(err)
 	}
 
 	object, err := objectStorage.GetObject(value.FileName, *dependency)
 	if err != nil {
-		log.Println(err)
+		log.Panicln(err)
 	}
 
 	var waitGroup sync.WaitGroup

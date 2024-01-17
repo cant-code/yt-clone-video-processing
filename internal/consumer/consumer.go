@@ -8,17 +8,6 @@ import (
 	"yt-clone-video-processing/internal/dependency"
 )
 
-type Message struct {
-	FileId   int64
-	FileName string
-}
-
-var Pixels = [3]int{
-	720,
-	480,
-	360,
-}
-
 func Consume(dependency *dependency.Dependency) {
 	dial, err := stomp.Dial("tcp",
 		GenerateAddress(dependency.Configs.MQ),
@@ -39,7 +28,6 @@ func Consume(dependency *dependency.Dependency) {
 			go RunJob(msg, dependency)
 		}
 	}
-
 }
 
 func GenerateAddress(conf configurations.MQConfig) string {

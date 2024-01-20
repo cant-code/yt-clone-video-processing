@@ -5,7 +5,6 @@ import (
 	"github.com/go-stomp/stomp/v3"
 	"log"
 	"os"
-	"sync"
 	"yt-clone-video-processing/internal/dependency"
 	"yt-clone-video-processing/internal/encoder"
 	"yt-clone-video-processing/internal/objectStorage"
@@ -14,6 +13,11 @@ import (
 type Message struct {
 	FileId   int64
 	FileName string
+}
+
+type EncoderResponse struct {
+	Err      error
+	FilePath string
 }
 
 var Pixels = [3]int{
@@ -34,18 +38,40 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 		log.Panicln(err)
 	}
 
-	var waitGroup sync.WaitGroup
+	var subProcCount = 0
+	channel := make(chan EncoderResponse)
 
 	for _, target := range Pixels {
-		waitGroup.Add(1)
+		subProcCount += 1
 
 		go func(target int) {
-			defer waitGroup.Done()
-			encoder.EncodeVideo(object, target)
+			video, err2 := encoder.EncodeVideo(object, target)
+			if err2 != nil {
+				channel <- EncoderResponse{
+					Err:      err2,
+					FilePath: "",
+				}
+			}
+
+			putObject, err2 := objectStorage.PutObject(video, *dependency)
+			if err2 != nil {
+				channel <- EncoderResponse{
+					Err:      err2,
+					FilePath: "",
+				}
+			}
+
+			channel <- EncoderResponse{
+				Err:      nil,
+				FilePath: putObject,
+			}
 		}(target)
 	}
 
-	waitGroup.Wait()
+	for i := 0; i < subProcCount; i++ {
+		log.Println(<-channel)
+	}
+
 	err = os.Remove(object)
 	if err != nil {
 		log.Panicln(err)

@@ -7,15 +7,19 @@ import (
 	"time"
 )
 
-func EncodeVideo(input string, target int) {
+func EncodeVideo(input string, target int) (string, error) {
+	var key = fmt.Sprintf("%v-%v-output.mp4", time.Now().Unix(), target)
+
 	cmd := exec.Command("ffmpeg", "-i", input, "-vf", fmt.Sprintf("scale=-2:%v", target),
 		"-c:v", "libx264", "-crf", "18", "-preset", "veryslow",
-		"-c:a", "copy", fmt.Sprintf("./files/%v-%v-output.mp4", time.Now().Unix(), target))
+		"-c:a", "copy", fmt.Sprintf("./files/%s", key))
 
 	cmd.Stderr = log.Writer()
 
 	err := cmd.Run()
 	if err != nil {
-		log.Panicln(err)
+		return "", err
 	}
+
+	return key, nil
 }

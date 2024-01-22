@@ -57,7 +57,7 @@ func PutObject(key string, dependency dependency.Dependency) (string, error) {
 		var fileName = file.Name()
 		err := file.Close()
 		if err != nil {
-			log.Panic(err)
+			log.Panicln(err)
 		}
 
 		err = os.Remove(fileName)

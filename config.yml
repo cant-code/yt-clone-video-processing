@@ -4,7 +4,8 @@ mq:
   user: artemis
   password: artemis
 jobs:
-  queue: test
+  transcodingQueue: jms/transcoderQueue
+  managementQueue: jms/managementQueue
 aws:
   baseUrl: http://localhost:9000
   region: ap-south-1

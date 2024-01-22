@@ -10,7 +10,8 @@ type MQConfig struct {
 }
 
 type SubscriberConfig struct {
-	Queue string
+	TranscodingQueue string
+	ManagementQueue  string
 }
 
 type Buckets struct {

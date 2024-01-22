@@ -8,22 +8,8 @@ import (
 	"yt-clone-video-processing/internal/dependency"
 	"yt-clone-video-processing/internal/encoder"
 	"yt-clone-video-processing/internal/objectStorage"
+	"yt-clone-video-processing/pkg/model"
 )
-
-type Message struct {
-	FileId   int64
-	FileName string
-}
-
-type FileData struct {
-	FileName string `json:"fileName"`
-	Quality  int    `json:"quality"`
-}
-
-type FileManagementMessage struct {
-	FileId int64      `json:"fileId"`
-	Files  []FileData `json:"files"`
-}
 
 type EncoderResponse struct {
 	Err      error
@@ -38,7 +24,14 @@ var Quality = [3]int{
 }
 
 func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
-	var value Message
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("Panic occurred while running job:", err)
+		}
+	}()
+
+	var value model.Message
 	err := json.Unmarshal(msg.Body, &value)
 	if err != nil {
 		log.Panicln(err)
@@ -55,37 +48,17 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 	for _, target := range Quality {
 		subProcCount += 1
 
-		go func(target int) {
-			video, err2 := encoder.EncodeVideo(object, target)
-			if err2 != nil {
-				channel <- EncoderResponse{
-					Err: err2,
-				}
-			}
-
-			putObject, err2 := objectStorage.PutObject(video, *dependency)
-			if err2 != nil {
-				channel <- EncoderResponse{
-					Err: err2,
-				}
-			}
-
-			channel <- EncoderResponse{
-				Err:      nil,
-				FileName: putObject,
-				Quality:  target,
-			}
-		}(target)
+		go EncodeVideoAndUploadToS3(target, object, channel, dependency)
 	}
 
-	var response = FileManagementMessage{FileId: value.FileId}
+	var response = model.FileManagementMessage{FileId: value.FileId}
 
 	for i := 0; i < subProcCount; i++ {
 		encoderResponse := <-channel
 		if encoderResponse.Err != nil {
 			log.Panicln(encoderResponse.Err)
 		}
-		response.Files = append(response.Files, FileData{
+		response.Files = append(response.Files, model.FileData{
 			FileName: encoderResponse.FileName,
 			Quality:  encoderResponse.Quality,
 		})
@@ -104,5 +77,27 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 	err = os.Remove(object)
 	if err != nil {
 		log.Panicln(err)
+	}
+}
+
+func EncodeVideoAndUploadToS3(target int, object string, channel chan EncoderResponse, dependency *dependency.Dependency) {
+	video, err2 := encoder.EncodeVideo(object, target)
+	if err2 != nil {
+		channel <- EncoderResponse{
+			Err: err2,
+		}
+	}
+
+	putObject, err2 := objectStorage.PutObject(video, *dependency)
+	if err2 != nil {
+		channel <- EncoderResponse{
+			Err: err2,
+		}
+	}
+
+	channel <- EncoderResponse{
+		Err:      nil,
+		FileName: putObject,
+		Quality:  target,
 	}
 }

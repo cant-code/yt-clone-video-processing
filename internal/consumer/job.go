@@ -23,23 +23,20 @@ var Quality = [3]int{
 	360,
 }
 
-func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
+const contentType = "text/plain"
 
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println("Panic occurred while running job:", err)
-		}
-	}()
+func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 
 	var value model.Message
 	err := json.Unmarshal(msg.Body, &value)
 	if err != nil {
-		log.Panicln(err)
+		log.Println(err)
+		return
 	}
 
 	object, err := objectStorage.GetObject(value.FileName, *dependency)
 	if err != nil {
-		log.Panicln(err)
+		log.Println(err)
 	}
 
 	var subProcCount = 0
@@ -56,48 +53,56 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 	for i := 0; i < subProcCount; i++ {
 		encoderResponse := <-channel
 		if encoderResponse.Err != nil {
-			log.Panicln(encoderResponse.Err)
+			log.Println(encoderResponse.Err)
+			response.Files = append(response.Files, model.FileData{
+				Quality: encoderResponse.Quality,
+				Success: false,
+				Error:   encoderResponse.Err,
+			})
+		} else {
+			response.Files = append(response.Files, model.FileData{
+				FileName: encoderResponse.FileName,
+				Quality:  encoderResponse.Quality,
+				Success:  true,
+			})
 		}
-		response.Files = append(response.Files, model.FileData{
-			FileName: encoderResponse.FileName,
-			Quality:  encoderResponse.Quality,
-		})
 	}
 
 	marshal, err := json.Marshal(response)
 	if err != nil {
-		log.Panicln(err)
+		log.Println(err)
 	}
 
-	err = dependency.MQConn.Send(dependency.Configs.Jobs.ManagementQueue, "text/plain", marshal)
+	err = dependency.MQConn.Send(dependency.Configs.Jobs.ManagementQueue, contentType, marshal)
 	if err != nil {
-		log.Panicln(err)
+		log.Println(err)
 	}
 
 	err = os.Remove(object)
 	if err != nil {
-		log.Panicln(err)
+		log.Println(err)
 	}
 }
 
 func EncodeVideoAndUploadToS3(target int, object string, channel chan EncoderResponse, dependency *dependency.Dependency) {
-	video, err2 := encoder.EncodeVideo(object, target)
-	if err2 != nil {
+	video, err := encoder.EncodeVideo(object, target)
+	if err != nil {
 		channel <- EncoderResponse{
-			Err: err2,
+			Err:     err,
+			Quality: target,
 		}
 	}
 
-	putObject, err2 := objectStorage.PutObject(video, *dependency)
-	if err2 != nil {
+	key, err := objectStorage.PutObject(video, *dependency)
+	if err != nil {
 		channel <- EncoderResponse{
-			Err: err2,
+			Err:     err,
+			Quality: target,
 		}
 	}
 
 	channel <- EncoderResponse{
-		Err:      nil,
-		FileName: putObject,
+		FileName: key,
 		Quality:  target,
 	}
 }

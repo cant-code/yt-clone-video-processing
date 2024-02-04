@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/go-stomp/stomp/v3"
 	"log"
 	"os"
@@ -96,7 +97,7 @@ func EncodeVideoAndUploadToS3(target int, object string, channel chan EncoderRes
 	}
 
 	var size int64 = 0
-	stat, err := os.Stat(video)
+	stat, err := os.Stat(fmt.Sprintf("./files/%s", video))
 	if err != nil {
 		log.Println(err)
 	}

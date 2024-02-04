@@ -15,6 +15,7 @@ type EncoderResponse struct {
 	Err      error
 	FileName string
 	Quality  int
+	Size     int64
 }
 
 var Quality = [3]int{
@@ -62,6 +63,7 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 		} else {
 			response.Files = append(response.Files, model.FileData{
 				FileName: encoderResponse.FileName,
+				Size:     encoderResponse.Size,
 				Quality:  encoderResponse.Quality,
 				Success:  true,
 			})
@@ -93,6 +95,13 @@ func EncodeVideoAndUploadToS3(target int, object string, channel chan EncoderRes
 		}
 	}
 
+	var size int64 = 0
+	stat, err := os.Stat(video)
+	if err != nil {
+		log.Println(err)
+	}
+	size = stat.Size()
+
 	key, err := objectStorage.PutObject(video, *dependency)
 	if err != nil {
 		channel <- EncoderResponse{
@@ -104,5 +113,6 @@ func EncodeVideoAndUploadToS3(target int, object string, channel chan EncoderRes
 	channel <- EncoderResponse{
 		FileName: key,
 		Quality:  target,
+		Size:     size,
 	}
 }

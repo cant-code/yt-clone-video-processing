@@ -8,6 +8,7 @@ type Message struct {
 type FileData struct {
 	FileName string `json:"fileName"`
 	Quality  int    `json:"quality"`
+	Size     int64  `json:"size"`
 	Success  bool   `json:"success"`
 	Error    error  `json:"error"`
 }

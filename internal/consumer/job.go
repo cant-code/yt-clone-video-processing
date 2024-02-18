@@ -26,7 +26,11 @@ var Quality = [3]int{
 	360,
 }
 
-const contentType = "text/plain"
+const (
+	contentType = "text/plain"
+	insertQuery = "INSERT INTO FILE_STATUS (id, vid, status) VALUES (nextval('file_status_seq'), $1, $2) RETURNING ID"
+	updateQuery = "UPDATE FILE_STATUS SET STATUS = $1 WHERE ID = $2"
+)
 
 type STATUS int
 
@@ -51,8 +55,7 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 	}
 
 	var id int64
-	err = dependency.DBConn.QueryRow("INSERT INTO FILE_STATUS (id, vid, status) "+
-		"VALUES (nextval('file_status_seq'), $1, $2) RETURNING ID", value.FileId, Started.string()).Scan(&id)
+	err = dependency.DBConn.QueryRow(insertQuery, value.FileId, Started.string()).Scan(&id)
 	if err != nil {
 		log.Println("Error while adding entry into the DB", err)
 	}
@@ -150,7 +153,7 @@ func encodeVideoAndUploadToS3(target int, object string, channel chan EncoderRes
 }
 
 func updateStatusForId(id int64, status STATUS, DBConn *sql.DB) {
-	_, err := DBConn.Exec("UPDATE FILE_STATUS SET STATUS = $1 WHERE ID = $2", status.string(), id)
+	_, err := DBConn.Exec(updateQuery, status.string(), id)
 	if err != nil {
 		log.Println("Error while updating status", err)
 	}

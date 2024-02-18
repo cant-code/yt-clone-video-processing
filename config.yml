@@ -12,3 +12,7 @@ aws:
   buckets:
     rawVideos: raw-videos
     transcodedVideos: transcoded-videos
+db:
+  url: localhost:5432
+  username: postgres
+  password: pass

@@ -2,6 +2,7 @@ package dependency
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -14,6 +15,7 @@ type Dependency struct {
 	Configs  configurations.Config
 	S3Client *s3.Client
 	MQConn   *stomp.Conn
+	DBConn   *sql.DB
 }
 
 func GetDependencies() (*Dependency, error) {
@@ -22,12 +24,17 @@ func GetDependencies() (*Dependency, error) {
 		return nil, err
 	}
 
-	client, err := GetClient(conf.Aws)
+	client, err := getClient(conf.Aws)
 	if err != nil {
 		return nil, err
 	}
 
-	mq, err := ConnectToMQ(conf.MQ)
+	mq, err := connectToMQ(conf.MQ)
+	if err != nil {
+		return nil, err
+	}
+
+	dbClient, err := getDBClient(conf.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -36,10 +43,11 @@ func GetDependencies() (*Dependency, error) {
 		Configs:  conf,
 		S3Client: client,
 		MQConn:   mq,
+		DBConn:   dbClient,
 	}, nil
 }
 
-func GetClient(awsConfig configurations.AwsConfig) (*s3.Client, error) {
+func getClient(awsConfig configurations.AwsConfig) (*s3.Client, error) {
 	defaultConfig, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return nil, err
@@ -54,9 +62,9 @@ func GetClient(awsConfig configurations.AwsConfig) (*s3.Client, error) {
 	return client, nil
 }
 
-func ConnectToMQ(config configurations.MQConfig) (*stomp.Conn, error) {
+func connectToMQ(config configurations.MQConfig) (*stomp.Conn, error) {
 	dial, err := stomp.Dial("tcp",
-		GenerateAddress(config),
+		generateAddress(config),
 		stomp.ConnOpt.Login(config.User, config.Password))
 
 	if err != nil {
@@ -66,6 +74,18 @@ func ConnectToMQ(config configurations.MQConfig) (*stomp.Conn, error) {
 	return dial, nil
 }
 
-func GenerateAddress(conf configurations.MQConfig) string {
+func getDBClient(config configurations.DBConfig) (*sql.DB, error) {
+	db, err := sql.Open("postgres", generatePostgresUrl(config))
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+func generateAddress(conf configurations.MQConfig) string {
 	return fmt.Sprintf("%s:%s", conf.Host, conf.Port)
+}
+
+func generatePostgresUrl(config configurations.DBConfig) string {
+	return fmt.Sprintf("postgres://%s:%s@%s/file_processing?sslmode=disable", config.Username, config.Password, config.Url)
 }

@@ -25,10 +25,17 @@ type AwsConfig struct {
 	Buckets Buckets
 }
 
+type DBConfig struct {
+	Url      string
+	Username string
+	Password string
+}
+
 type Config struct {
 	MQ   MQConfig
 	Jobs SubscriberConfig
 	Aws  AwsConfig
+	DB   DBConfig
 }
 
 func LoadConfig() (Config, error) {

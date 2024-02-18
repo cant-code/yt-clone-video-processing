@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/go-stomp/stomp/v3"
@@ -27,6 +28,19 @@ var Quality = [3]int{
 
 const contentType = "text/plain"
 
+type STATUS int
+
+const (
+	Started STATUS = iota
+	Success
+	Failed
+	PartialSuccess
+)
+
+func (status STATUS) string() string {
+	return [...]string{"Started", "Success", "Failed", "PARTIAL_SUCCESS"}[status]
+}
+
 func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 
 	var value model.Message
@@ -36,26 +50,34 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 		return
 	}
 
+	var id int64
+	err = dependency.DBConn.QueryRow("INSERT INTO FILE_STATUS (id, vid, status) "+
+		"VALUES (nextval('file_status_seq'), $1, $2) RETURNING ID", value.FileId, Started.string()).Scan(&id)
+	if err != nil {
+		log.Println("Error while adding entry into the DB", err)
+	}
+
 	object, err := objectStorage.GetObject(value.FileName, *dependency)
 	if err != nil {
 		log.Println(err)
 	}
 
-	var subProcCount = 0
 	channel := make(chan EncoderResponse)
 
 	for _, target := range Quality {
-		subProcCount += 1
-
-		go EncodeVideoAndUploadToS3(target, object, channel, dependency)
+		go encodeVideoAndUploadToS3(target, object, channel, dependency)
 	}
 
 	var response = model.FileManagementMessage{FileId: value.FileId}
 
-	for i := 0; i < subProcCount; i++ {
+	var failCount = 0
+
+	for range Quality {
 		encoderResponse := <-channel
 		if encoderResponse.Err != nil {
 			log.Println(encoderResponse.Err)
+			failCount++
+
 			response.Files = append(response.Files, model.FileData{
 				Quality: encoderResponse.Quality,
 				Success: false,
@@ -69,6 +91,15 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 				Success:  true,
 			})
 		}
+	}
+
+	switch failCount {
+	case len(Quality):
+		updateStatusForId(id, Failed, dependency.DBConn)
+	case 0:
+		updateStatusForId(id, Success, dependency.DBConn)
+	default:
+		updateStatusForId(id, PartialSuccess, dependency.DBConn)
 	}
 
 	marshal, err := json.Marshal(response)
@@ -87,7 +118,7 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 	}
 }
 
-func EncodeVideoAndUploadToS3(target int, object string, channel chan EncoderResponse, dependency *dependency.Dependency) {
+func encodeVideoAndUploadToS3(target int, object string, channel chan EncoderResponse, dependency *dependency.Dependency) {
 	video, err := encoder.EncodeVideo(object, target)
 	if err != nil {
 		channel <- EncoderResponse{
@@ -115,5 +146,12 @@ func EncodeVideoAndUploadToS3(target int, object string, channel chan EncoderRes
 		FileName: key,
 		Quality:  target,
 		Size:     size,
+	}
+}
+
+func updateStatusForId(id int64, status STATUS, DBConn *sql.DB) {
+	_, err := DBConn.Exec("UPDATE FILE_STATUS SET STATUS = $1 WHERE ID = $2", status.string(), id)
+	if err != nil {
+		log.Println("Error while updating status", err)
 	}
 }

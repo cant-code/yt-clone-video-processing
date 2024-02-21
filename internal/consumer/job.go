@@ -7,6 +7,7 @@ import (
 	"github.com/go-stomp/stomp/v3"
 	"log"
 	"os"
+	"strconv"
 	"yt-clone-video-processing/internal/dependency"
 	"yt-clone-video-processing/internal/encoder"
 	"yt-clone-video-processing/internal/objectStorage"
@@ -27,9 +28,11 @@ var Quality = [3]int{
 }
 
 const (
-	contentType = "text/plain"
-	insertQuery = "INSERT INTO FILE_STATUS (id, vid, status) VALUES (nextval('file_status_seq'), $1, $2) RETURNING ID"
-	updateQuery = "UPDATE FILE_STATUS SET STATUS = $1 WHERE ID = $2"
+	contentType            = "text/plain"
+	insertQuery            = "INSERT INTO FILE_STATUS (id, vid, status) VALUES (nextval('file_status_seq'), $1, $2) RETURNING ID"
+	updateQuery            = "UPDATE FILE_STATUS SET STATUS = $1 WHERE ID = $2"
+	insertJobStatWithError = "INSERT INTO JOB_STATUS (vid, quality, success, error) VALUES ($1, $2, false, $3)"
+	insertJobStat          = "INSERT INTO JOB_STATUS (vid, quality, success) VALUES ($1, $2, true)"
 )
 
 type STATUS int
@@ -81,12 +84,16 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 			log.Println(encoderResponse.Err)
 			failCount++
 
+			addJobStatus(value.FileId, strconv.Itoa(encoderResponse.Quality), encoderResponse.Err, dependency.DBConn)
+
 			response.Files = append(response.Files, model.FileData{
 				Quality: encoderResponse.Quality,
 				Success: false,
 				Error:   encoderResponse.Err,
 			})
 		} else {
+			addJobStatus(value.FileId, strconv.Itoa(encoderResponse.Quality), nil, dependency.DBConn)
+
 			response.Files = append(response.Files, model.FileData{
 				FileName: encoderResponse.FileName,
 				Size:     encoderResponse.Size,
@@ -149,6 +156,18 @@ func encodeVideoAndUploadToS3(target int, object string, channel chan EncoderRes
 		FileName: key,
 		Quality:  target,
 		Size:     size,
+	}
+}
+
+func addJobStatus(id int64, quality string, message error, DBConn *sql.DB) {
+	var err error
+	if message != nil {
+		_, err = DBConn.Exec(insertJobStatWithError, id, quality, message)
+	} else {
+		_, err = DBConn.Exec(insertJobStat, id, quality)
+	}
+	if err != nil {
+		log.Println("Error while inserting job status", err)
 	}
 }
 

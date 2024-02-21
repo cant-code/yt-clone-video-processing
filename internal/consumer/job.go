@@ -42,7 +42,7 @@ const (
 )
 
 func (status STATUS) string() string {
-	return [...]string{"Started", "Success", "Failed", "PARTIAL_SUCCESS"}[status]
+	return [...]string{"STARTED", "SUCCESS", "FAILED", "PARTIAL_SUCCESS"}[status]
 }
 
 func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {

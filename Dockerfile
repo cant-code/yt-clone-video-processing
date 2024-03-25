@@ -36,6 +36,8 @@ USER appuser
 # Copy the executable from the "build" stage.
 COPY ./bin/app /bin
 
+RUN chown appuser /bin/app
+
 RUN ls -l /bin
 
 # Expose the port that the application listens on.

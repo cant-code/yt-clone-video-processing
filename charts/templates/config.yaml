@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: config-chart
+  name: {{ include "charts.fullname" . }}
   labels:
     {{- include "charts.labels" . | nindent 4 }}
 data:

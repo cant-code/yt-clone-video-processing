@@ -44,14 +44,14 @@ spec:
             - mountPath: "/bin"
               name: config
               readOnly: true
-      {{- with .Values.nodeSelector }}
       volumes:
         - name: config
           configMap:
-            name: config-chart
+            name: {{ include "charts.fullname" . }}
             items:
               - key: config.yml
                 path: config.yml
+      {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -31,7 +31,6 @@ RUN adduser \
     --no-create-home \
     --uid "${UID}" \
     appuser
-USER appuser
 
 # Copy the executable from the "build" stage.
 COPY ./bin/app /bin
@@ -39,6 +38,8 @@ COPY ./bin/app /bin
 RUN chown appuser /bin/app
 
 RUN ls -l /bin
+
+USER appuser
 
 # Expose the port that the application listens on.
 EXPOSE 8080

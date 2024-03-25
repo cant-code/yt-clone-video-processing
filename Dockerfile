@@ -39,8 +39,6 @@ COPY ./bin/app /bin
 RUN chown appuser /bin/app
 RUN chmod +x /bin/app
 
-RUN ls -l /bin
-
 USER appuser
 
 # Expose the port that the application listens on.

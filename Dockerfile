@@ -36,6 +36,8 @@ USER appuser
 # Copy the executable from the "build" stage.
 COPY ./bin/app /bin
 
+RUN chmod +x /bin/app
+
 # Expose the port that the application listens on.
 EXPOSE 8080
 

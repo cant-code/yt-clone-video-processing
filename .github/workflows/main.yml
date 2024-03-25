@@ -1,0 +1,38 @@
+name: Build and Push Image
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+      - name: Install dependencies
+        run: go mod download -x
+      - name: Build
+        run: go build -o ./bin/app ./cmd/app
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: video-processing-app
+          path: ./bin/app
+          retention-days: 1
+
+  create-image:
+    name: Build Image and Push
+    needs: build
+    uses: cant-code/github-workflows/.github/workflows/docker-push.yml@main
+    with:
+      DOCKER_TAG: damnationcantcode/yt-clone-video-processing
+      ARTIFACT_NAME: video-processing-app
+      ARTIFACT_PATH: ./bin
+    secrets: inherit

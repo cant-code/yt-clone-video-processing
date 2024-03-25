@@ -41,7 +41,7 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - mountPath: "/bin"
+            - mountPath: "/bin/config"
               name: config
               readOnly: true
       volumes:

@@ -40,7 +40,18 @@ spec:
               name: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/bin"
+              name: config
+              readOnly: true
       {{- with .Values.nodeSelector }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "charts.fullname" . }}
+            items:
+              - key: config.yml
+                path: config.yml
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -35,7 +35,9 @@ RUN adduser \
 # Copy the executable from the "build" stage.
 COPY ./bin/app /bin
 
+# Assign file to user and give execute flag to file
 RUN chown appuser /bin/app
+RUN chmod +x /bin/app
 
 RUN ls -l /bin
 

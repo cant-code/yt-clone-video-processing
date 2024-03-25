@@ -48,7 +48,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ include "charts.fullname" . }}
+            name: config-chart
             items:
               - key: config.yml
                 path: config.yml

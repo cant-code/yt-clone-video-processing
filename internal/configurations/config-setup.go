@@ -44,6 +44,7 @@ func LoadConfig() (Config, error) {
 	conf.SetConfigName("config")
 	conf.SetConfigType("yml")
 	conf.AddConfigPath(".")
+	conf.AutomaticEnv()
 
 	if err := conf.ReadInConfig(); err != nil {
 		return Config{}, err

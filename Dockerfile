@@ -34,10 +34,10 @@ RUN adduser \
 USER appuser
 
 # Copy the executable from the "build" stage.
-COPY ./bin/app app
+COPY ./bin/app /bin
 
 # Expose the port that the application listens on.
 EXPOSE 8080
 
 # What the container should run when it is started.
-ENTRYPOINT [ "./app" ]
+ENTRYPOINT [ "/bin/app" ]

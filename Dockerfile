@@ -44,5 +44,7 @@ USER appuser
 # Expose the port that the application listens on.
 EXPOSE 8080
 
+WORKDIR /bin
+
 # What the container should run when it is started.
 ENTRYPOINT [ "/bin/app" ]

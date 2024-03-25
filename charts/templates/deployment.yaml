@@ -38,6 +38,11 @@ spec:
               hostPort: 8080
               protocol: TCP
               name: http
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: QGKVpdtxKQwULEXAdCHA
+            - name: AWS_SECRET_ACCESS_KEY
+              value: ASDpc89UINueq44CoTKIyqPv3GLvCf5tO4TDOp7N
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

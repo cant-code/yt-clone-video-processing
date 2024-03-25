@@ -7,7 +7,7 @@ metadata:
 data:
   config.yml: |
     mq:
-      host: localhost
+      host: artemis-service.artemis-dev.svc.cluster.local
       port: 61616
       user: artemis
       password: artemis
@@ -15,13 +15,13 @@ data:
       transcodingQueue: jms/transcoderQueue
       managementQueue: jms/managementQueue
     aws:
-      baseUrl: http://localhost:9000
+      baseUrl: http://minio-service.minio-dev.svc.cluster.local:9000
       region: ap-south-1
       buckets:
         rawVideos: raw-videos
         transcodedVideos: transcoded-videos
     db:
-      url: localhost:5432
-      username: postgres
-      password: pass
+      url: postgres-postgresql.postgres.svc.cluster.local:5432
+      username: service_user
+      password: test_service_user
   

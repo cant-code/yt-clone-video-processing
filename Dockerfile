@@ -32,6 +32,9 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
+#Create application dir
+RUN mkdir /home/application
+
 # Copy the executable from the "build" stage.
 COPY ./bin/app /home/application
 

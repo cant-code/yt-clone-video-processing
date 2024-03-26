@@ -36,7 +36,7 @@ RUN adduser \
 COPY ./bin/app /bin
 
 # Copy Database migrations to the container
-COPY ./database /bin
+COPY ./database /bin/database
 
 # Assign file to user and give execute flag to file
 RUN chown appuser /bin/app

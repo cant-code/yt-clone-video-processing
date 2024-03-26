@@ -35,6 +35,9 @@ RUN adduser \
 # Copy the executable from the "build" stage.
 COPY ./bin/app /bin
 
+# Copy Database migrations to the container
+COPY ./database /bin
+
 # Assign file to user and give execute flag to file
 RUN chown appuser /bin/app
 RUN chmod +x /bin/app

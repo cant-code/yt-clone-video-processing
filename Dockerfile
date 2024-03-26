@@ -34,6 +34,7 @@ RUN adduser \
 
 #Create application dir
 RUN mkdir /home/application
+RUN mkdir /home/application/files
 
 # Copy the executable from the "build" stage.
 COPY ./bin/app /home/application
@@ -45,6 +46,7 @@ COPY ./database /home/application/database
 RUN chown appuser /home/application/app
 RUN chmod +x /home/application/app
 RUN chown appuser /home/application
+RUN chown appuser /home/application/files
 
 USER appuser
 

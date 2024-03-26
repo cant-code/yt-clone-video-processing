@@ -33,21 +33,22 @@ RUN adduser \
     appuser
 
 # Copy the executable from the "build" stage.
-COPY ./bin/app /bin
+COPY ./bin/app /home/application
 
 # Copy Database migrations to the container
-COPY ./database /bin/database
+COPY ./database /home/application/database
 
 # Assign file to user and give execute flag to file
-RUN chown appuser /bin/app
-RUN chmod +x /bin/app
+RUN chown appuser /home/application/app
+RUN chmod +x /home/application/app
+RUN chown appuser /home/application
 
 USER appuser
 
 # Expose the port that the application listens on.
 EXPOSE 8080
 
-WORKDIR /bin
+WORKDIR /home/application
 
 # What the container should run when it is started.
-ENTRYPOINT [ "/bin/app" ]
+ENTRYPOINT [ "/home/application/app" ]

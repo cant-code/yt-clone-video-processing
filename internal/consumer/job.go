@@ -57,6 +57,8 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 		return
 	}
 
+	log.Println("Received file to transcode with id: ", value.FileId)
+
 	var id int64
 	err = dependency.DBConn.QueryRow(insertQuery, value.FileId, Started.string()).Scan(&id)
 	if err != nil {
@@ -126,6 +128,8 @@ func RunJob(msg *stomp.Message, dependency *dependency.Dependency) {
 	if err != nil {
 		log.Println(err)
 	}
+
+	log.Println("Finished processing for fileId: ", value.FileId)
 }
 
 func encodeVideoAndUploadToS3(target int, object string, channel chan EncoderResponse, dependency *dependency.Dependency) {

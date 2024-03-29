@@ -2,7 +2,6 @@ package encoder
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"time"
 )
@@ -14,7 +13,7 @@ func EncodeVideo(input string, target int) (string, error) {
 		"-c:v", "libx264", "-crf", "18", "-preset", "veryslow",
 		"-c:a", "copy", fmt.Sprintf("./files/%s", key))
 
-	cmd.Stderr = log.Writer()
+	cmd.Stdout = nil
 
 	err := cmd.Run()
 	if err != nil {

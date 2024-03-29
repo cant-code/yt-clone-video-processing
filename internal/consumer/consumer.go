@@ -17,6 +17,7 @@ func Consume(dependency *dependency.Dependency) {
 		msg := <-sub.C
 
 		if msg != nil {
+			log.Println("Received message from queue")
 			go RunJob(msg, dependency)
 		}
 	}

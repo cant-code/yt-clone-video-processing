@@ -166,7 +166,7 @@ func encodeVideoAndUploadToS3(target int, object string, channel chan EncoderRes
 func addJobStatus(id int64, quality string, message error, DBConn *sql.DB) {
 	var err error
 	if message != nil {
-		_, err = DBConn.Exec(insertJobStatWithError, id, quality, message)
+		_, err = DBConn.Exec(insertJobStatWithError, id, quality, message.Error())
 	} else {
 		_, err = DBConn.Exec(insertJobStat, id, quality)
 	}

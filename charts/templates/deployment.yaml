@@ -49,6 +49,7 @@ spec:
             - mountPath: "/home/application/config"
               name: config
               readOnly: true
+      automountServiceAccountToken: false
       volumes:
         - name: config
           configMap:

@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"yt-clone-video-processing/internal/consumer"
 	"yt-clone-video-processing/internal/dependency"
+	"yt-clone-video-processing/internal/handlers"
 	"yt-clone-video-processing/internal/initializations"
 )
 
@@ -15,5 +17,10 @@ func main() {
 
 	initializations.RunMigrations(dependencies)
 
-	consumer.Consume(dependencies)
+	go consumer.Consume(dependencies)
+
+	h := handlers.Dependencies{DBConn: dependencies.DBConn}
+	if err := http.ListenAndServe(":8080", h.ApiHandler()); err != nil {
+		log.Println(err)
+	}
 }

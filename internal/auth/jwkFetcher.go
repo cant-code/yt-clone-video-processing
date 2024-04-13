@@ -12,11 +12,11 @@ import (
 	"strings"
 )
 
-func getJWKSet(url string) (map[string]*rsa.PublicKey, error) {
+func (config *middlewareConfig) getJWKSet() error {
 	// Make the GET request
-	response, err := http.Get(url)
+	response, err := http.Get(config.Auth.Url + "/protocol/openid-connect/certs")
 	if err != nil {
-		return nil, fmt.Errorf("error making GET request: %v", err)
+		return fmt.Errorf("error making GET request: %v", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -37,7 +37,7 @@ func getJWKSet(url string) (map[string]*rsa.PublicKey, error) {
 	}
 	decoder := json.NewDecoder(response.Body)
 	if err := decoder.Decode(&jwkSet); err != nil {
-		return nil, fmt.Errorf("error decoding JSON: %v", err)
+		return fmt.Errorf("error decoding JSON: %v", err)
 	}
 
 	// Create a map to store RSA public keys
@@ -48,12 +48,12 @@ func getJWKSet(url string) (map[string]*rsa.PublicKey, error) {
 		// Decode base64url-encoded modulus (N) and exponent (E)
 		modulus, err := decodeBase64URL(key.N)
 		if err != nil {
-			return nil, fmt.Errorf("error decoding modulus: %v", err)
+			return fmt.Errorf("error decoding modulus: %v", err)
 		}
 
 		exponent, err := decodeBase64URL(key.E)
 		if err != nil {
-			return nil, fmt.Errorf("error decoding exponent: %v", err)
+			return fmt.Errorf("error decoding exponent: %v", err)
 		}
 
 		// Create RSA public key
@@ -66,7 +66,9 @@ func getJWKSet(url string) (map[string]*rsa.PublicKey, error) {
 		jwkMap[key.Alg] = pubKey
 	}
 
-	return jwkMap, nil
+	config.JWKSet = jwkMap
+
+	return nil
 }
 
 func decodeBase64URL(input string) (*big.Int, error) {

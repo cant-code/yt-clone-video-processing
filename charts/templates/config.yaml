@@ -24,4 +24,5 @@ data:
       url: postgres-postgresql.postgres.svc.cluster.local:5432
       username: service_user
       password: test_service_user
-  
+    auth:
+      url: http://keycloak.keycloak.svc.cluster.local:8080/realms/yt-clone

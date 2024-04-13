@@ -31,11 +31,16 @@ type DBConfig struct {
 	Password string
 }
 
+type Auth struct {
+	Url string
+}
+
 type Config struct {
 	MQ   MQConfig
 	Jobs SubscriberConfig
 	Aws  AwsConfig
 	DB   DBConfig
+	Auth Auth
 }
 
 func LoadConfig() (Config, error) {

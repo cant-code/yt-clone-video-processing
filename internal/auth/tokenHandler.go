@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func jwtMiddleware(jwkSet map[string]*rsa.PublicKey) func(http.Handler) http.Handler {
+func (config *middlewareConfig) jwtMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -19,7 +19,7 @@ func jwtMiddleware(jwkSet map[string]*rsa.PublicKey) func(http.Handler) http.Han
 			}
 
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			token, err := jwt.Parse(tokenString, parseToken(jwkSet))
+			token, err := jwt.Parse(tokenString, parseToken(config.JWKSet))
 
 			if err != nil || !token.Valid {
 				log.Println("error validating token:", err)
@@ -28,7 +28,7 @@ func jwtMiddleware(jwkSet map[string]*rsa.PublicKey) func(http.Handler) http.Han
 			}
 
 			issuer, err := token.Claims.GetIssuer()
-			if err != nil || issuer != "http://localhost:8900/realms/yt-clone" {
+			if err != nil || issuer != config.Auth.Url {
 				log.Println("error validating issuer:", err)
 				http.Error(w, "", http.StatusUnauthorized)
 				return

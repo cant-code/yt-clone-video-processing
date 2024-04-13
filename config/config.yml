@@ -16,3 +16,5 @@ db:
   url: localhost:5432
   username: postgres
   password: pass
+auth:
+  url: http://localhost:8900/realms/yt-clone

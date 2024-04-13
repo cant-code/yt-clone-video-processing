@@ -3,16 +3,19 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"yt-clone-video-processing/internal/auth"
 )
 
 type Dependencies struct {
 	DBConn *sql.DB
 }
 
-func (dependencies *Dependencies) ApiHandler() *http.ServeMux {
+func (apiConfig *Dependencies) ApiHandler() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /videos/errors/{id}", dependencies.errorHandler)
+	handler := auth.HandleJwtAuthMiddleware()
+
+	mux.Handle("GET /videos/errors/{id}", handler(http.HandlerFunc(apiConfig.errorHandler)))
 
 	return mux
 }

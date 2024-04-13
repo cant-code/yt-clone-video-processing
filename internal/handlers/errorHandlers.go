@@ -20,8 +20,8 @@ const (
 	applicationJson      = "application/json"
 )
 
-func (dependencies *Dependencies) errorHandler(w http.ResponseWriter, r *http.Request) {
-	exec, err := dependencies.DBConn.Query(selectErrorsUsingVid, r.PathValue(id))
+func (apiConfig *Dependencies) errorHandler(w http.ResponseWriter, r *http.Request) {
+	exec, err := apiConfig.DBConn.Query(selectErrorsUsingVid, r.PathValue(id))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, err := fmt.Fprintf(w, err.Error())

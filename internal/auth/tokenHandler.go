@@ -28,7 +28,7 @@ func (config *middlewareConfig) jwtMiddleware() func(http.Handler) http.Handler 
 			}
 
 			issuer, err := token.Claims.GetIssuer()
-			if err != nil || issuer != config.Auth.Url {
+			if err != nil || issuer != config.OpenIdConfig.Issuer {
 				log.Println("error validating issuer:", err)
 				http.Error(w, "", http.StatusUnauthorized)
 				return

@@ -2,6 +2,9 @@ package auth
 
 import (
 	"crypto/rsa"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"yt-clone-video-processing/internal/configurations"
@@ -12,18 +15,51 @@ type IMiddleware interface {
 	jwtMiddleware() func(http.Handler) http.Handler
 }
 
-type middlewareConfig struct {
-	Auth   configurations.Auth
-	JWKSet map[string]*rsa.PublicKey
+type openIdConfig struct {
+	Issuer string `json:"issuer"`
+	Jwks   string `json:"jwks_uri"`
 }
 
-func HandleJwtAuthMiddleware(auth *configurations.Auth) func(http.Handler) http.Handler {
-	middleware := IMiddleware(&middlewareConfig{Auth: *auth})
+type middlewareConfig struct {
+	OpenIdConfig *openIdConfig
+	JWKSet       map[string]*rsa.PublicKey
+}
 
-	err := middleware.getJWKSet()
+const wellKnownConfigs = "/.well-known/openid-configuration"
+
+func HandleJwtAuthMiddleware(auth *configurations.Auth) func(http.Handler) http.Handler {
+	openIdConfig, err := getOpenIdConfigs(auth)
+	if err != nil {
+		log.Println("Error getting openid configs: ", err)
+	}
+
+	middleware := IMiddleware(&middlewareConfig{OpenIdConfig: openIdConfig})
+
+	err = middleware.getJWKSet()
 	if err != nil {
 		log.Printf("Error fetching jwk-sets: %v\n", err)
 	}
 
 	return middleware.jwtMiddleware()
+}
+
+func getOpenIdConfigs(auth *configurations.Auth) (*openIdConfig, error) {
+	response, err := http.Get(auth.Url + wellKnownConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("error making GET request: %v", err)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Println("Error closing body:", err)
+		}
+	}(response.Body)
+
+	var openIdConfig openIdConfig
+	decoder := json.NewDecoder(response.Body)
+	if err := decoder.Decode(&openIdConfig); err != nil {
+		return nil, fmt.Errorf("error decoding JSON: %v", err)
+	}
+
+	return &openIdConfig, nil
 }

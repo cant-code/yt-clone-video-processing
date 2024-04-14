@@ -14,7 +14,7 @@ import (
 
 func (config *middlewareConfig) getJWKSet() error {
 	// Make the GET request
-	response, err := http.Get(config.Auth.Url + "/protocol/openid-connect/certs")
+	response, err := http.Get(config.OpenIdConfig.Jwks)
 	if err != nil {
 		return fmt.Errorf("error making GET request: %v", err)
 	}

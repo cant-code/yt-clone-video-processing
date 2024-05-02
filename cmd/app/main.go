@@ -20,7 +20,7 @@ func main() {
 	go consumer.Consume(dependencies)
 
 	h := handlers.Dependencies{DBConn: dependencies.DBConn, Auth: dependencies.Configs.Auth}
-	if err := http.ListenAndServe(":8080", h.ApiHandler()); err != nil {
+	if err := http.ListenAndServe(":"+dependencies.Configs.Server.Port, h.ApiHandler()); err != nil {
 		log.Println(err)
 	}
 }

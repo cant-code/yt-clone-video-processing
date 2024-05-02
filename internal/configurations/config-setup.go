@@ -36,11 +36,14 @@ type Auth struct {
 }
 
 type Config struct {
-	MQ   MQConfig
-	Jobs SubscriberConfig
-	Aws  AwsConfig
-	DB   DBConfig
-	Auth Auth
+	MQ     MQConfig
+	Jobs   SubscriberConfig
+	Aws    AwsConfig
+	DB     DBConfig
+	Auth   Auth
+	Server struct {
+		Port string
+	}
 }
 
 func LoadConfig() (Config, error) {
